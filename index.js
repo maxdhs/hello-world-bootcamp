@@ -70,14 +70,41 @@ app.put("/students/:studentId", async (req, res) => {
       error: "Name wasn't included in your update request.",
     });
   }
-  const student = await prisma.student.update({
-    where: { id: studentId },
-    data: { name },
-  });
-  res.send({
-    success: true,
-    student,
-  });
+  try {
+    // would prefer no student found can't update message
+    const checkStudent = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (typeof name !== "string") {
+      return res.send({
+        success: false,
+        error: "New name of student must be a string.",
+      });
+    }
+
+    if (!checkStudent) {
+      return res.send({
+        success: false,
+        error: "Student not found, can't update.",
+      });
+    }
+
+    const student = await prisma.student.update({
+      where: { id: studentId },
+      data: { name },
+    });
+    res.send({
+      success: true,
+      student,
+    });
+  } catch (error) {
+    console.log(error);
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
 });
 
 // GET /instructors to return students
